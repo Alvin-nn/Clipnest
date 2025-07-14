@@ -10,11 +10,11 @@ import {
 import { useRouter } from 'expo-router';
 
 export default function EmailScreen() {
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const router = useRouter();
 
   const handleNext = () => {
-    router.push('/auth/signup/birthdate');
+    router.push('/auth/signup/interests');
   };
 
   const handleBack = () => {
@@ -38,7 +38,7 @@ export default function EmailScreen() {
               key={index}
               style={[
                 styles.dot,
-                index === 1 && styles.activeDot,
+                index === 4 && styles.activeDot,
               ]}
             />
           ))}
@@ -47,24 +47,24 @@ export default function EmailScreen() {
 
       {/* Main content */}
       <View style={styles.form}>
-  <Text style={styles.title}>Create a password</Text>
+  <Text style={styles.title}>Enter your username</Text>
 
   <TextInput
     style={styles.input}
-    placeholder="Password"
+    placeholder="Username"
     placeholderTextColor="#AAAAAA"
     keyboardType="default"
     secureTextEntry
-    value={password}
-    onChangeText={setPassword}
+    value={username}
+    onChangeText={setUsername}
   />
 </View>
 
 
       {/* Next Button */}
-      <Pressable style={[styles.nextButton, !password && {opacity: 0.5}]} 
+      <Pressable style={[styles.nextButton, !username && {opacity: 0.5}]} 
           onPress={handleNext}
-          disabled={!password}
+          disabled={!username}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </Pressable>

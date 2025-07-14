@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 
 export default function EmailScreen() {
+  const [email, setEmail] = useState('');
   const router = useRouter();
 
   const handleNext = () => {
@@ -44,7 +45,6 @@ export default function EmailScreen() {
         </View>
       </View>
 
-      {/* Main content */}
       <View style={styles.form}>
   <Text style={styles.title}>What's your email?</Text>
 
@@ -53,12 +53,17 @@ export default function EmailScreen() {
     placeholder="Email"
     placeholderTextColor="#AAAAAA"
     keyboardType="email-address"
+    value={email}
+    onChangeText={setEmail}
   />
 </View>
 
 
       {/* Next Button */}
-      <Pressable style={styles.nextButton} onPress={handleNext}>
+      <Pressable style={[styles.nextButton, !email && { opacity : 0.5}]} 
+        onPress={handleNext}
+        disabled={!email}
+      >
         <Text style={styles.nextButtonText}>Next</Text>
       </Pressable>
     </View>
@@ -69,13 +74,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#181D1C',
-    paddingHorizontal: 20,
     paddingTop: 60,
     alignItems: 'center',
   },
   topNav: {
     position: 'absolute',
-    top: 60,
+    top: 80,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
@@ -104,7 +108,7 @@ const styles = StyleSheet.create({
   activeDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: '#FFFFFF',
     backgroundColor: '#AAAAAA',
@@ -114,7 +118,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 15,
   },
   input: {
     width: 344,
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
   },
   form: {
   position: 'absolute',
-  top: 100,
+  top: 120,
   width: '100%',
   alignItems: 'center',
 },

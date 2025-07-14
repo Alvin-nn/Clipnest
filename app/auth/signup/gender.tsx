@@ -1,20 +1,21 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   StyleSheet,
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-export default function EmailScreen() {
-  const [password, setPassword] = useState('');
+export default function GenderScreen() {
   const router = useRouter();
+  const [selectedGender, setSelectedGender] = useState<string | null>(null);
 
   const handleNext = () => {
-    router.push('/auth/signup/birthdate');
+    if (selectedGender) {
+      router.push('/auth/signup/username');
+    }
   };
 
   const handleBack = () => {
@@ -36,10 +37,7 @@ export default function EmailScreen() {
           {[...Array(6)].map((_, index) => (
             <View
               key={index}
-              style={[
-                styles.dot,
-                index === 1 && styles.activeDot,
-              ]}
+              style={[styles.dot, index === 3 && styles.activeDot]}
             />
           ))}
         </View>
@@ -47,24 +45,37 @@ export default function EmailScreen() {
 
       {/* Main content */}
       <View style={styles.form}>
-  <Text style={styles.title}>Create a password</Text>
+        <Text style={styles.title}>What's your gender?</Text>
 
-  <TextInput
-    style={styles.input}
-    placeholder="Password"
-    placeholderTextColor="#AAAAAA"
-    keyboardType="default"
-    secureTextEntry
-    value={password}
-    onChangeText={setPassword}
-  />
-</View>
+        <Pressable
+          style={[
+            styles.genderButton,
+            selectedGender === 'female' && styles.genderButtonSelected,
+          ]}
+          onPress={() => setSelectedGender('female')}
+        >
+          <Text style={styles.genderButtonText}>Female</Text>
+        </Pressable>
 
+        <Pressable
+          style={[
+            styles.genderButton,
+            selectedGender === 'male' && styles.genderButtonSelected,
+          ]}
+          onPress={() => setSelectedGender('male')}
+        >
+          <Text style={styles.genderButtonText}>Male</Text>
+        </Pressable>
+      </View>
 
       {/* Next Button */}
-      <Pressable style={[styles.nextButton, !password && {opacity: 0.5}]} 
-          onPress={handleNext}
-          disabled={!password}
+      <Pressable
+        style={[
+          styles.nextButton,
+          !selectedGender && { opacity: 0.4 },
+        ]}
+        onPress={handleNext}
+        disabled={!selectedGender}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </Pressable>
@@ -120,18 +131,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
   },
-  input: {
-    width: 344,
-    height: 50,
-    borderColor: '#FFFFFF',
+  genderButton: {
+    width: 334,
+    height: 43,
+    borderRadius: 30,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    color: '#FFFFFF',
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'transparent',
-    marginBottom: 313,
+    marginBottom: 5,
+  },
+  genderButtonSelected: {
+    backgroundColor: '#27403B',
+  },
+  genderButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
   },
   nextButton: {
     backgroundColor: '#7BDAC8',
@@ -149,11 +167,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   form: {
-  position: 'absolute',
-  top: 120,
-  width: '100%',
-  alignItems: 'center',
-},
-
+    position: 'absolute',
+    top: 120,
+    width: '100%',
+    alignItems: 'center',
+  },
 });
-
