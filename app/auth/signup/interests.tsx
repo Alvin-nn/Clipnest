@@ -1,20 +1,18 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Image,
-  ScrollView,
-  Animated,
-  Alert,
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 export default function InterestsScreen() {
   const router = useRouter();
   const [selectedImages, setSelectedImages] = useState<number[]>([]);
-  const scaleValues = useRef<{ [key: number]: Animated.Value }>({}).current;
 
   const handleBack = () => {
     router.back();
@@ -26,41 +24,14 @@ export default function InterestsScreen() {
 
   const handleImagePress = (id: number) => {
     const isSelected = selectedImages.includes(id);
-
-    if (!scaleValues[id]) {
-      scaleValues[id] = new Animated.Value(1);
-    }
-
     if (isSelected) {
       setSelectedImages(prev => prev.filter(i => i !== id));
-      Animated.spring(scaleValues[id], {
-        toValue: 1,
-        friction: 5,
-        tension: 100,
-        useNativeDriver: true,
-      }).start();
     } else {
       if (selectedImages.length >= 7) {
         Alert.alert('Limit reached', 'You can select up to 7 interests.');
         return;
       }
-
       setSelectedImages(prev => [...prev, id]);
-
-      Animated.sequence([
-        Animated.spring(scaleValues[id], {
-          toValue: 1.3,
-          friction: 3,
-          tension: 120,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleValues[id], {
-          toValue: 1.15,
-          friction: 4,
-          tension: 80,
-          useNativeDriver: true,
-        })
-      ]).start();
     }
   };
 
@@ -122,18 +93,18 @@ export default function InterestsScreen() {
         <View style={styles.imageGrid}>
           {interests.map((item) => {
             const isSelected = selectedImages.includes(item.id);
-            const scale = scaleValues[item.id] || new Animated.Value(1);
-
             return (
               <View key={item.id} style={styles.imageContainer}>
-                <Pressable onPress={() => handleImagePress(item.id)}>
-                  <Animated.Image
+                <Pressable 
+                  onPress={() => handleImagePress(item.id)}
+                  style={[
+                    styles.imageWrapper,
+                    isSelected && styles.selectedWrapper
+                  ]}
+                >
+                  <Image
                     source={item.image}
-                    style={[
-                      styles.image,
-                      { transform: [{ scale }] },
-                      isSelected && styles.glow
-                    ]}
+                    style={styles.image}
                   />
                 </Pressable>
                 <Text style={styles.imageTitle}>{item.title}</Text>
@@ -241,18 +212,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  imageWrapper: {
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedWrapper: {
+    borderColor: '#7BD4C8',
+    transform: [{ scale: 1.1 }],
+  },
   image: {
     width: 102,
     height: 102,
     borderRadius: 25,
     resizeMode: 'cover',
-  },
-  glow: {
-    shadowColor: '#F3FAF8',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 10, // for Android
   },
   imageTitle: {
     color: '#FFFFFF',

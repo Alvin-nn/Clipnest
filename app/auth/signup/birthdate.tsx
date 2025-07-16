@@ -1,39 +1,111 @@
 // Step-by-step wheel-style date picker with faded top/bottom using @react-native-picker/picker
 // Install first: npm install @react-native-picker/picker
 
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Image,
-  Platform,
-} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const days = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
-const years = Array.from({ length: 100 }, (_, i) => `${new Date().getFullYear() - i}`);
+const defaultDays = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
+
+// Get days based on month and year
+const getDaysInMonth = (month: string, year: string) => {
+  if (!month || !year) return defaultDays;
+  
+  const monthIndex = months.indexOf(month);
+  const daysInMonth = new Date(parseInt(year), monthIndex + 1, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+};
+
+const MIN_AGE = 13; // Minimum age requirement
+const MAX_AGE = 100; // Maximum age requirement
+
+// Generate years from current year minus MIN_AGE down to current year minus MAX_AGE
+const currentYear = new Date().getFullYear();
+const years = Array.from(
+  { length: MAX_AGE - MIN_AGE + 1 }, 
+  (_, i) => `${currentYear - MIN_AGE - i}`
+);
 
 export default function BirthdateScreen() {
   const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
-  const isBirthdateComplete =
-    selectedMonth !== '' &&
-    selectedDay !== '' &&
-    selectedYear !== '';
+  const [validDays, setValidDays] = useState(defaultDays);
+  const [error, setError] = useState('');
 
+  // Update available days when month or year changes
+  useEffect(() => {
+    if (selectedMonth && selectedYear) {
+      const newDays = getDaysInMonth(selectedMonth, selectedYear);
+      setValidDays(newDays);
+      
+      // If selected day is no longer valid, reset it
+      if (selectedDay && parseInt(selectedDay) > newDays.length) {
+        setSelectedDay('');
+      }
+    }
+  }, [selectedMonth, selectedYear]);
+
+  const isValidDate = () => {
+    if (!selectedMonth || !selectedDay || !selectedYear) return false;
+
+    const birthDate = new Date(
+      parseInt(selectedYear),
+      months.indexOf(selectedMonth),
+      parseInt(selectedDay)
+    );
+
+    // Check if date is valid
+    if (isNaN(birthDate.getTime())) {
+      setError('Please select a valid date');
+      return false;
+    }
+
+    // Check if date is in the future
+    if (birthDate > new Date()) {
+      setError('Birthdate cannot be in the future');
+      return false;
+    }
+
+    // Calculate age
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const dayDiff = today.getDate() - birthDate.getDate();
+
+    // Check minimum age
+    if (age < MIN_AGE || (age === MIN_AGE && (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)))) {
+      setError(`You must be at least ${MIN_AGE} years old to sign up`);
+      return false;
+    }
+
+    // Check maximum age
+    if (age > MAX_AGE) {
+      setError(`Age cannot exceed ${MAX_AGE} years`);
+      return false;
+    }
+
+    setError('');
+    return true;
+  };
 
   const handleNext = () => {
-    router.push('/auth/signup/gender' as any);
+    if (isValidDate()) {
+      router.push('/auth/signup/gender' as any);
+    }
   };
 
   const handleBack = () => {
@@ -60,57 +132,74 @@ export default function BirthdateScreen() {
         </View>
       </View>
 
+      <View style={styles.form}>
+        {/* Title */}
+        <Text style={styles.title}>What's your birthdate?</Text>
 
-    <View style ={styles.form}>
-      {/* Title */}
-      <Text style={styles.title}>What's your birthdate?</Text>
+        {/* Error message */}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      {/* Picker container */}
-      <View style={styles.pickerWrapper}>
-        <View style={styles.fadedOverlay} pointerEvents="none" />
-        <View style={styles.pickerRow}>
-          <Picker
-            selectedValue={selectedMonth}
-            onValueChange={(itemValue) => setSelectedMonth(itemValue)}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-          >
-            {months.map((month) => (
-              <Picker.Item key={month} label={month} value={month} />
-            ))}
-          </Picker>
+        {/* Picker container */}
+        <View style={styles.pickerWrapper}>
+          <View style={styles.fadedOverlay} pointerEvents="none" />
+          <View style={styles.pickerRow}>
+            <Picker
+              selectedValue={selectedMonth}
+              onValueChange={(itemValue) => {
+                setSelectedMonth(itemValue);
+                setError('');
+              }}
+              style={styles.picker}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Month" value="" color="#AAAAAA" />
+              {months.map((month) => (
+                <Picker.Item key={month} label={month} value={month} />
+              ))}
+            </Picker>
 
-          <Picker
-            selectedValue={selectedDay}
-            onValueChange={(itemValue) => setSelectedDay(itemValue)}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-          >
-            {days.map((day) => (
-              <Picker.Item key={day} label={day} value={day} />
-            ))}
-          </Picker>
+            <Picker
+              selectedValue={selectedDay}
+              onValueChange={(itemValue) => {
+                setSelectedDay(itemValue);
+                setError('');
+              }}
+              style={styles.picker}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Day" value="" color="#AAAAAA" />
+              {validDays.map((day) => (
+                <Picker.Item key={day} label={day} value={day} />
+              ))}
+            </Picker>
 
-          <Picker
-            selectedValue={selectedYear}
-            onValueChange={(itemValue) => setSelectedYear(itemValue)}
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
-          >
-            {years.map((year) => (
-              <Picker.Item key={year} label={year} value={year} />
-            ))}
-          </Picker>
+            <Picker
+              selectedValue={selectedYear}
+              onValueChange={(itemValue) => {
+                setSelectedYear(itemValue);
+                setError('');
+              }}
+              style={styles.picker}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Year" value="" color="#AAAAAA" />
+              {years.map((year) => (
+                <Picker.Item key={year} label={year} value={year} />
+              ))}
+            </Picker>
+          </View>
+          <View style={[styles.fadedOverlay, { bottom: 0, top: 'auto' }]} pointerEvents="none" />
         </View>
-        <View style={[styles.fadedOverlay, { bottom: 0, top: 'auto' }]} pointerEvents="none" />
       </View>
-    </View>
-    
 
       {/* Next button */}
-      <Pressable style={[styles.nextButton,!isBirthdateComplete && {opacity: 0.5},]} 
+      <Pressable 
+        style={[
+          styles.nextButton,
+          (!selectedMonth || !selectedDay || !selectedYear) && { opacity: 0.5 }
+        ]} 
         onPress={handleNext}
-        disabled={!isBirthdateComplete}
+        disabled={!selectedMonth || !selectedDay || !selectedYear}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </Pressable>
@@ -166,8 +255,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     textAlign: 'center',
-    marginBottom: 0,
+    marginBottom: 10,
     marginTop: 100,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 10,
+    width: 300,
   },
   pickerWrapper: {
     height: 150,
@@ -213,10 +309,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   form: {
-  position: 'absolute',
-  top: 20,
-  width: '100%',
-  alignItems: 'center',
-},
-
+    position: 'absolute',
+    top: 20,
+    width: '100%',
+    alignItems: 'center',
+  },
 });

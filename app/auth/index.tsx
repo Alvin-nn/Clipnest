@@ -64,30 +64,31 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     color: '#fff',
-    marginBottom: 40,
+    marginBottom: 20,
     fontWeight: '600',
     textAlign: 'center',
   },
   clipnestText: {
-    fontFamily: 'Lobster',
+    fontFamily: 'Sofia',
     fontSize: 28,
-    color: '#fff',
+    color: '#7BD4C8',
   },
   button: {
-    backgroundColor: '#4A5A6A',
+    backgroundColor: '#27403B',
     paddingVertical: 15,
     paddingHorizontal: 40,
-    borderRadius: 8,
-    marginBottom: 15,
+    borderRadius: 30,
+    marginBottom: 10,
     width: '100%',
     alignItems: 'center',
   },
   login: {
-    backgroundColor: '#26A69A',
+    backgroundColor: '#7BD4C8',
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+    textAlign: 'center',
   },
 });
