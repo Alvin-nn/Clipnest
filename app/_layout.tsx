@@ -1,6 +1,6 @@
-import { Stack } from 'expo-router';
-import { useState, useEffect } from 'react';
 import * as Font from 'expo-font';
+import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ThemeProvider } from '../theme/themecontext'; // Correct path
 
 export default function RootLayout() {
@@ -11,6 +11,7 @@ export default function RootLayout() {
     const loadFonts = async () => {
       await Font.loadAsync({
         Lobster: require('../assets/fonts/Lobster-Regular.ttf'),
+        Sofia: require('../assets/fonts/Sofia-Regular.ttf'),
       });
       setFontsLoaded(true);
     };
