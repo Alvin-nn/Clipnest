@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import {
-  FlatList,
-  Keyboard,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    FlatList,
+    Keyboard,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { useThemeContext } from '../../theme/themecontext';
 
@@ -35,7 +35,7 @@ export default function SearchScreen() {
       <View
         style={[
           styles.container,
-          { backgroundColor: isDarkMode ? '#000' : '#fff' },
+          { backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' },
         ]}
       >
         <View style={styles.searchRow}>

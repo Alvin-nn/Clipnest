@@ -1,11 +1,11 @@
-import { Stack } from 'expo-router';
-import { useState, useEffect } from 'react';
 import * as Font from 'expo-font';
+import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ThemeProvider } from '../theme/themecontext'; // Correct path
 
 export default function RootLayout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated] = useState(true); // Always authenticated
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -14,13 +14,7 @@ export default function RootLayout() {
       });
       setFontsLoaded(true);
     };
-
     loadFonts();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsAuthenticated(false), 500);
-    return () => clearTimeout(timer);
   }, []);
 
   if (!fontsLoaded) return null;
@@ -37,12 +31,11 @@ export default function RootLayout() {
         ) : (
           <Stack.Screen name="auth/get-started" />
         )}
-
         {/* Enable modal presentation for modals folder */}
         <Stack.Screen
           name="modals/PostCreationModal"
           options={{
-            presentation: 'transparentModal', // or 'modal' for iOS-style slide-up
+            presentation: 'transparentModal',
             animation: 'slide_from_bottom',
           }}
         />

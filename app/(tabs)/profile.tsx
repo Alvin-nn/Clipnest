@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import EditProfileModal from '../modals/EditProfileModal';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useThemeContext } from '../../theme/themecontext'; //  FIXED PATH
+import EditProfileModal from '../modals/EditProfileModal';
 
 export default function ProfileScreen() {
   const [isModalVisible, setModalVisible] = useState(false);
@@ -25,24 +25,21 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.container}
-      style={{ backgroundColor: isDarkMode ? '#000' : '#fff' }} //  Dynamic background
+      style={{ backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }} // updated
     >
       <View style={styles.topBar}>
         <TouchableOpacity onPress={openSettings}>
           <Ionicons name="settings-outline" size={28} color={isDarkMode ? 'white' : 'black'} />
         </TouchableOpacity>
-
         <TouchableOpacity onPress={() => alert('Share profile tapped')}>
           <Ionicons name="share-social-outline" size={28} color={isDarkMode ? 'white' : 'black'} />
         </TouchableOpacity>
       </View>
-
       <View style={styles.topSection}>
         <View style={[styles.profilePic, { backgroundColor: isDarkMode ? '#333' : '#ccc' }]} />
         <Text style={[styles.name, { color: isDarkMode ? '#fff' : '#000' }]}>{name}</Text>
         <Text style={[styles.username, { color: isDarkMode ? '#aaa' : '#888' }]}>@{username}</Text>
-
-        <View style={styles.stats}>
+        <View className={styles.stats}>
           <View style={styles.stat}>
             <Text style={[styles.statNumber, { color: isDarkMode ? '#fff' : '#000' }]}>0</Text>
             <Text style={[styles.statLabel, { color: isDarkMode ? '#aaa' : '#666' }]}>Followers</Text>
@@ -52,7 +49,6 @@ export default function ProfileScreen() {
             <Text style={[styles.statLabel, { color: isDarkMode ? '#aaa' : '#666' }]}>Following</Text>
           </View>
         </View>
-
         <Text style={[styles.bio, { color: isDarkMode ? '#ccc' : '#555' }]}>{bio}</Text>
 
         <TouchableOpacity

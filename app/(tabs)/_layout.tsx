@@ -1,12 +1,20 @@
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Ionicons, Feather } from '@expo/vector-icons';
 import React from 'react';
+import { useThemeContext } from '../../theme/themecontext';
 
 export default function TabLayout() {
+  const { isDarkMode } = useThemeContext();
+  const tabBarBg = isDarkMode ? '#181D1C' : '#F3FAF8';
+  const tabBarActive = isDarkMode ? '#4EE0C1' : '#181D1C';
+  const tabBarInactive = isDarkMode ? '#fff' : '#888';
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#e91e63',
+        tabBarActiveTintColor: tabBarActive,
+        tabBarInactiveTintColor: tabBarInactive,
+        tabBarStyle: { backgroundColor: tabBarBg, borderTopWidth: 0 },
         tabBarLabelStyle: { fontSize: 12 },
         headerShown: false,
       }}

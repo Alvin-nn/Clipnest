@@ -1,18 +1,15 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    Dimensions,
-    Image,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
-const CENTER_X = width / 2;
-const CENTER_Y = 170; // vertical center for collage
-const RADIUS = 100;
+const COLLAGE_SIZE = 340;
+const CENTER = COLLAGE_SIZE / 2;
 
 export default function AuthIndex() {
   const router = useRouter();
@@ -31,68 +28,52 @@ export default function AuthIndex() {
     require('../../assets/images/img11.jpg'),
   ];
 
+  // Manually position each image to match the screenshot
+  const collageImages = [
+    // Top left (tall)
+    <Image key={0} source={images[0]} style={[styles.collageImg, { width: 70, height: 110, borderRadius: 22, left: 30, top: 10 }]} />,
+    // Top center left (tall)
+    <Image key={1} source={images[1]} style={[styles.collageImg, { width: 70, height: 110, borderRadius: 22, left: 100, top: 0 }]} />,
+    // Top right (wide)
+    <Image key={2} source={images[2]} style={[styles.collageImg, { width: 90, height: 70, borderRadius: 18, left: 200, top: 20 }]} />,
+    // Middle left (square)
+    <Image key={3} source={images[3]} style={[styles.collageImg, { width: 70, height: 70, borderRadius: 18, left: 10, top: 100 }]} />,
+    // Center left (giraffe, wide)
+    <Image key={4} source={images[4]} style={[styles.collageImg, { width: 90, height: 70, borderRadius: 18, left: 70, top: 110 }]} />,
+    // Center (largest)
+    <Image key={5} source={images[5]} style={[styles.collageImg, { width: 110, height: 110, borderRadius: 28, left: 115, top: 90, zIndex: 2 }]} />,
+    // Center right (hand, tall)
+    <Image key={6} source={images[6]} style={[styles.collageImg, { width: 70, height: 110, borderRadius: 22, left: 230, top: 90 }]} />,
+    // Middle right (square)
+    <Image key={7} source={images[7]} style={[styles.collageImg, { width: 70, height: 70, borderRadius: 18, left: 260, top: 140 }]} />,
+    // Bottom left (cake, square)
+    <Image key={8} source={images[8]} style={[styles.collageImg, { width: 70, height: 70, borderRadius: 18, left: 60, top: 200 }]} />,
+    // Bottom center (statue, tall)
+    <Image key={9} source={images[9]} style={[styles.collageImg, { width: 70, height: 110, borderRadius: 22, left: 140, top: 200 }]} />,
+    // Bottom right (room, wide)
+    <Image key={10} source={images[10]} style={[styles.collageImg, { width: 90, height: 70, borderRadius: 18, left: 210, top: 210 }]} />,
+  ];
+
   return (
     <View style={styles.container}>
-      {/* --- Collage of images --- */}
-      <View style={styles.collage}>
-        {/* Central image */}
-        <Image
-          source={images[0]}
-          style={[
-            styles.image,
-            {
-              width: 100,
-              height: 100,
-              top: CENTER_Y - 50,
-              left: CENTER_X - 50,
-              zIndex: 2,
-            },
-          ]}
-        />
-
-        {/* Radial images around the center */}
-        {images.slice(1).map((img, i) => {
-          const angle = (2 * Math.PI * i) / 10;
-          const x = CENTER_X + RADIUS * Math.cos(angle);
-          const y = CENTER_Y + RADIUS * Math.sin(angle);
-
-          return (
-            <Image
-              key={i}
-              source={img}
-              style={[
-                styles.image,
-                {
-                  width: 60,
-                  height: 60,
-                  top: y - 30,
-                  left: x - 30,
-                },
-              ]}
-            />
-          );
-        })}
+      <View style={styles.collageWrapper}>
+        {collageImages}
       </View>
-
-      {/* --- Welcome text --- */}
-      <Text style={styles.title}>
-        Welcome to <Text style={styles.clipnest}>Clipnest</Text>
-      </Text>
-
-      {/* --- Pill Buttons --- */}
-      <View style={styles.buttonContainer}>
+      <View style={{ alignItems: 'center', marginTop: 32 }}>
+        <Text style={styles.title}>
+          Welcome to <Text style={styles.clipnest}>Clipnest</Text>
+        </Text>
         <Pressable
           style={styles.signUp}
           onPress={() => router.push('/auth/signup')}
         >
-          <Text style={styles.buttonText}>Sign up</Text>
+          <Text style={styles.signUpText}>Sign up</Text>
         </Pressable>
-
         <Pressable
           style={styles.login}
-          onPress={() => router.push('/auth/login')}
+          onPress={() => router.replace('/(tabs)')}
         >
-          <Text style={styles.buttonText}>Login</Text>
+          <Text style={styles.loginText}>Login</Text>
         </Pressable>
       </View>
     </View>
@@ -102,55 +83,61 @@ export default function AuthIndex() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#181D1C',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: 40,
+    justifyContent: 'center',
   },
-  collage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: 350,
+  collageWrapper: {
+    width: COLLAGE_SIZE,
+    height: COLLAGE_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
+    marginBottom: 32,
+    position: 'relative',
   },
-  image: {
+  collageImg: {
     position: 'absolute',
-    borderRadius: 30,
+    backgroundColor: '#222',
     resizeMode: 'cover',
   },
   title: {
     fontSize: 24,
     color: '#fff',
-    fontWeight: '600',
-    marginBottom: 20,
+    fontWeight: '500',
+    marginBottom: 32,
+    textAlign: 'center',
   },
   clipnest: {
     fontFamily: 'Lobster',
     fontSize: 28,
     color: '#fff',
   },
-  buttonContainer: {
-    width: '80%',
-  },
   signUp: {
-    backgroundColor: '#2E4A4A',
-    width: 300,
-    height: 100,
+    width: 280,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#22302C',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 999,
-    marginBottom: 10,
+    marginBottom: 16,
+  },
+  signUpText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '400',
   },
   login: {
-    backgroundColor: '#26A69A',
-    paddingVertical: 15,
+    width: 280,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#4EE0C1',
     alignItems: 'center',
-    borderRadius: 30,
+    justifyContent: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
+  loginText: {
+    color: '#181D1C',
     fontSize: 18,
+    fontWeight: '500',
   },
 });
