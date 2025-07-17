@@ -194,17 +194,17 @@ export default function SearchScreen() {
       <SafeAreaView style={{ flex: 1, backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }}>
         <View style={{ paddingHorizontal: 12, paddingTop: Platform.OS === 'android' ? 24 : 0, backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }}>
           <View style={styles.searchBarRow}>
-            <TextInput
+          <TextInput
               placeholder="Search Clipnest"
-              placeholderTextColor={isDarkMode ? '#aaa' : '#999'}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: isDarkMode ? '#222' : '#f0f0f0',
-                  color: isDarkMode ? '#fff' : '#000',
-                },
-              ]}
-              value={searchText}
+            placeholderTextColor={isDarkMode ? '#aaa' : '#999'}
+            style={[
+              styles.input,
+              {
+                backgroundColor: isDarkMode ? '#222' : '#f0f0f0',
+                color: isDarkMode ? '#fff' : '#000',
+              },
+            ]}
+            value={searchText}
               onChangeText={(text) => {
                 setSearchText(text);
                 setShowSuggestions(true);
@@ -289,7 +289,7 @@ export default function SearchScreen() {
               <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedPin(null)}>
                 <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
-            </View>
+      </View>
           </Pressable>
         </Modal>
       </SafeAreaView>
