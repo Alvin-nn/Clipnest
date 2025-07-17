@@ -1,19 +1,21 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useThemeContext } from '../../theme/themecontext';
 
 const dummyMessages = new Array(10).fill(null); // 10 blank message placeholders
 
 export default function Messages() {
+  const { isDarkMode } = useThemeContext();
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Inbox</Text>
-      <Text style={styles.subText}>Find people to message</Text>
+    <View style={[styles.container, { backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }]}>
+      <Text style={[styles.header, { color: isDarkMode ? '#fff' : '#181D1C' }]}>Inbox</Text>
+      <Text style={[styles.subText, { color: isDarkMode ? '#aaa' : '#666' }]}>Find people to message</Text>
 
       <FlatList
         data={dummyMessages}
         keyExtractor={(_, i) => i.toString()}
         renderItem={() => (
-          <View style={styles.messageBubble} />
+          <View style={[styles.messageBubble, { backgroundColor: isDarkMode ? '#252A29' : '#E2F1ED' }]} />
         )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -24,7 +26,6 @@ export default function Messages() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
     flex: 1,
     paddingTop: 60, // so it's not too high on phones
     paddingHorizontal: 16,
@@ -36,7 +37,6 @@ const styles = StyleSheet.create({
   },
   subText: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 16,
   },
   listContent: {
@@ -44,7 +44,6 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     height: 60,
-    backgroundColor: '#e1e1e1',
     borderRadius: 15,
     marginBottom: 12,
   },
