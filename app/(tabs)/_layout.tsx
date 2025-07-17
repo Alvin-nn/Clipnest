@@ -27,8 +27,8 @@ export default function TabLayout() {
           name="index"
           options={{
             tabBarLabel: 'Home',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="home-outline" size={size} color={color} />
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
             ),
           }}
         />
@@ -48,14 +48,14 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => (
               <Feather name="plus-circle" size={size + 6} color={color} />
             ),
-            tabBarButton: (props) => (
+            tabBarButton: ({ accessibilityState, style }) => (
               <TouchableOpacity
-                {...props}
-                onPress={() => setModalVisible(true)}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                accessibilityState={accessibilityState}
+                style={[{ flex: 1, alignItems: 'center', justifyContent: 'center' }, style]}
                 activeOpacity={0.7}
+                onPress={() => setModalVisible(true)}
               >
-                <Feather name="plus-circle" size={32} color={props.accessibilityState?.selected ? tabBarActive : tabBarInactive} />
+                <Feather name="plus-circle" size={32} color={accessibilityState?.selected ? tabBarActive : tabBarInactive} />
               </TouchableOpacity>
             ),
           }}

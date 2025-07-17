@@ -1,13 +1,13 @@
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Image,
-  RefreshControl,
-  StyleSheet,
-  TouchableOpacity
+    ActivityIndicator,
+    Dimensions,
+    FlatList,
+    Image,
+    RefreshControl,
+    StyleSheet,
+    TouchableOpacity
 } from 'react-native';
 import { useThemeContext } from '../../theme/themecontext';
 
@@ -38,6 +38,10 @@ export default function HomeScreen() {
   const pageRef = useRef(1);
   const [query, setQuery] = useState(getRandomQuery());
   const router = useRouter();
+  const navigation = useNavigation();
+  const flatListRef = useRef<FlatList>(null);
+  const [isAtTop, setIsAtTop] = useState(true);
+  const lastWasAtTopRef = useRef(false);
 
   const backgroundColor = isDarkMode ? '#181D1C' : '#F3FAF8';
 
@@ -90,6 +94,29 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  // Listen for home tab press event
+  useEffect(() => {
+    // @ts-ignore: expo-router navigation supports 'tabPress' event
+    const unsubscribe = navigation.addListener('tabPress', (e) => {
+      if (!isAtTop && flatListRef.current) {
+        flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+        lastWasAtTopRef.current = true;
+      } else if (isAtTop && lastWasAtTopRef.current) {
+        onRefresh();
+        lastWasAtTopRef.current = false;
+      } else if (isAtTop) {
+        lastWasAtTopRef.current = true;
+      }
+    });
+    return unsubscribe;
+  }, [isAtTop, onRefresh]);
+
+  // Track if FlatList is at top
+  const handleScroll = (event: any) => {
+    setIsAtTop(event.nativeEvent.contentOffset.y <= 0);
+    if (event.nativeEvent.contentOffset.y > 0) lastWasAtTopRef.current = false;
+  };
+
   const renderItem = ({ item, index }: { item: ImageItem, index: number }) => (
     <TouchableOpacity
       onPress={() => router.push({
@@ -110,6 +137,7 @@ export default function HomeScreen() {
 
   return (
     <FlatList
+      ref={flatListRef}
       data={images}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
@@ -123,6 +151,8 @@ export default function HomeScreen() {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDarkMode ? '#fff' : '#181D1C'} />
       }
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
     />
   );
 }
