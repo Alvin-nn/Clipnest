@@ -1,10 +1,12 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
     Image,
     Keyboard,
+    Modal,
     Platform,
+    Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -37,6 +39,8 @@ const SUGGESTIONS = [
 type ImageItem = {
   id: string;
   url: string;
+  title?: string;
+  description?: string;
 };
 
 export default function SearchScreen() {
@@ -50,6 +54,10 @@ export default function SearchScreen() {
   const { isDarkMode } = useThemeContext();
   const pageRef = useRef(1);
   const searchRef = useRef('');
+  const [selectedPin, setSelectedPin] = useState<ImageItem | null>(null);
+
+  // Add debounce timer ref
+  const debounceTimer = useRef<any>(null);
 
   const fetchImages = useCallback(async (reset = false) => {
     const query = searchRef.current;
@@ -61,12 +69,30 @@ export default function SearchScreen() {
       // Unsplash fetch
       const unsplashPromise = fetch(
         `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&page=${page}&per_page=${PER_PAGE}&client_id=${UNSPLASH_ACCESS_KEY}`
-      ).then(res => res.ok ? res.json() : { results: [] });
+      ).then(async res => {
+        if (!res.ok) {
+          const txt = await res.text();
+          console.error('Unsplash error response:', txt);
+          throw new Error('Unsplash: ' + txt);
+        }
+        const json = await res.json();
+        console.log('Unsplash API response:', json);
+        return json;
+      });
       // Pexels fetch
       const pexelsPromise = fetch(
         `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&page=${page}&per_page=${PER_PAGE}`,
         { headers: { Authorization: PEXELS_API_KEY } }
-      ).then(res => res.ok ? res.json() : { photos: [] });
+      ).then(async res => {
+        if (!res.ok) {
+          const txt = await res.text();
+          console.error('Pexels error response:', txt);
+          throw new Error('Pexels: ' + txt);
+        }
+        const json = await res.json();
+        console.log('Pexels API response:', json);
+        return json;
+      });
       // Wait for both
       const [unsplashData, pexelsData] = await Promise.all([unsplashPromise, pexelsPromise]);
       // Normalize
@@ -78,6 +104,7 @@ export default function SearchScreen() {
       setHasMore(unsplashImages.length + pexelsImages.length > 0);
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
+      console.error('Image fetch error:', e);
     } finally {
       setLoading(false);
     }
@@ -101,22 +128,31 @@ export default function SearchScreen() {
   };
 
   const renderItem = ({ item }: { item: ImageItem }) => (
-    <Image
-      source={{ uri: item.url }}
-      style={styles.image}
-      resizeMode="cover"
-    />
+    <TouchableOpacity onPress={() => setSelectedPin(item)} activeOpacity={0.85}>
+      <Image
+        source={{ uri: item.url }}
+        style={styles.image}
+        resizeMode="cover"
+      />
+    </TouchableOpacity>
   );
+
+  const searchForSuggestion = (label: string) => {
+    setSearchText(label);
+    setShowSuggestions(false);
+    searchRef.current = label;
+    setImages([]);
+    setHasMore(true);
+    setError('');
+    pageRef.current = 1;
+    fetchImages(true);
+    Keyboard.dismiss();
+  };
 
   const renderSuggestionTile = ({ item }: { item: typeof SUGGESTIONS[0] }) => (
     <TouchableOpacity
       style={styles.suggestionTile}
-      onPress={() => {
-        setSearchText(item.label);
-        setShowSuggestions(false);
-        searchRef.current = item.label;
-        onSearch();
-      }}
+      onPress={() => searchForSuggestion(item.label)}
       activeOpacity={0.8}
     >
       <Image source={{ uri: item.image }} style={styles.suggestionImage} />
@@ -124,6 +160,31 @@ export default function SearchScreen() {
       <Text style={styles.suggestionLabel}>{item.label}</Text>
     </TouchableOpacity>
   );
+
+  // Debounced search effect
+  useEffect(() => {
+    if (searchText.trim() === '') {
+      setShowSuggestions(true);
+      setImages([]);
+      setError('');
+      setHasMore(true);
+      return;
+    }
+    setShowSuggestions(false);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      searchRef.current = searchText;
+      setImages([]);
+      setHasMore(true);
+      setError('');
+      pageRef.current = 1;
+      fetchImages(true);
+    }, 600); // 600ms debounce
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchText]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -150,7 +211,6 @@ export default function SearchScreen() {
                 setShowSuggestions(true);
               }}
               onBlur={() => setSearchFocused(false)}
-              onSubmitEditing={onSearch}
               returnKeyType="search"
             />
             {(searchFocused || searchText.length > 0) && (
@@ -198,6 +258,32 @@ export default function SearchScreen() {
             />
           </>
         )}
+        {/* Pin Details Modal */}
+        <Modal
+          visible={!!selectedPin}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSelectedPin(null)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setSelectedPin(null)}>
+            <View style={styles.modalContent}>
+              <Image
+                source={{ uri: selectedPin?.url }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+              {selectedPin?.title && (
+                <Text style={styles.modalTitle}>{selectedPin.title}</Text>
+              )}
+              {selectedPin?.description && (
+                <Text style={styles.modalDesc}>{selectedPin.description}</Text>
+              )}
+              <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedPin(null)}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
@@ -275,5 +361,51 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     margin: 8,
     backgroundColor: '#ccc',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#222',
+    borderRadius: 18,
+    padding: 16,
+    alignItems: 'center',
+    maxWidth: '90%',
+    maxHeight: '80%',
+  },
+  modalImage: {
+    width: 260,
+    height: 260,
+    borderRadius: 14,
+    marginBottom: 16,
+    backgroundColor: '#ccc',
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalDesc: {
+    color: '#ccc',
+    fontSize: 15,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  closeButton: {
+    backgroundColor: '#4EE0C1',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  closeButtonText: {
+    color: '#181D1C',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
