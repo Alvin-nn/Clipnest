@@ -60,6 +60,7 @@ export default function SearchScreen() {
   const debounceTimer = useRef<any>(null);
 
   const fetchImages = useCallback(async (reset = false) => {
+    console.log('fetchImages called', searchRef.current);
     const query = searchRef.current;
     if (!query.trim()) return;
     setLoading(true);
@@ -100,6 +101,7 @@ export default function SearchScreen() {
       const pexelsImages: ImageItem[] = (pexelsData.photos || []).map((img: any) => ({ id: 'p_' + img.id, url: img.src.medium }));
       const merged = reset ? [...unsplashImages, ...pexelsImages] : [...images, ...unsplashImages, ...pexelsImages];
       setImages(merged);
+      console.log('Images:', merged);
       pageRef.current = page + 1;
       setHasMore(unsplashImages.length + pexelsImages.length > 0);
     } catch (e: any) {
@@ -173,6 +175,7 @@ export default function SearchScreen() {
     setShowSuggestions(false);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
+      console.log('Debounced search effect triggered for', searchText);
       searchRef.current = searchText;
       setImages([]);
       setHasMore(true);
@@ -243,6 +246,11 @@ export default function SearchScreen() {
           <>
             {error ? (
               <Text style={{ color: 'red', textAlign: 'center', marginTop: 16 }}>{error}</Text>
+            ) : null}
+            {images.length === 0 && !loading ? (
+              <Text style={{ color: isDarkMode ? '#fff' : '#181D1C', textAlign: 'center', marginTop: 32, fontSize: 16 }}>
+                No results found
+              </Text>
             ) : null}
             <FlatList
               data={images}

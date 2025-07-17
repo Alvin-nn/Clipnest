@@ -1,7 +1,7 @@
 // modals/EditProfileModal.tsx
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -25,12 +25,13 @@ interface EditProfileModalProps {
   currentName: string;
   currentUsername: string;
   currentBio: string;
+  currentAvatar: string | null;
   onSave: (
     newName: string,
     newUsername: string,
     newBio: string,
-    showPins: boolean,
-    newProfilePicUri?: string
+    newAvatar: string | null,
+    showPins: boolean
   ) => void;
 }
 
@@ -40,6 +41,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   currentName,
   currentUsername,
   currentBio,
+  currentAvatar,
   onSave,
 }) => {
   const [name, setName] = useState(currentName);
@@ -52,7 +54,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const { isDarkMode } = useThemeContext(); // 🌙 get dark mode flag
 
   const handleSave = () => {
-    onSave(name, username, bio, showPins, profilePicUri);
+    onSave(name, username, bio, profilePicUri || null, showPins);
     onClose();
   };
 
@@ -111,6 +113,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     inputRange: [0, 1],
     outputRange: [300, 0],
   });
+
+  useEffect(() => {
+    setName(currentName);
+    setUsername(currentUsername);
+    setBio(currentBio);
+    setProfilePicUri(currentAvatar || undefined);
+  }, [currentName, currentUsername, currentBio, currentAvatar, visible]);
 
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
@@ -334,6 +343,42 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  avatarEdit: {
+    alignSelf: 'center',
+    marginBottom: 18,
+  },
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  editIconCircle: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#4EE0C1',
+    borderRadius: 12,
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  removeIconCircle: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#E74C3C',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+    zIndex: 2,
   },
 });
 

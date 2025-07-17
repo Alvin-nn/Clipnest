@@ -1,6 +1,7 @@
 import * as Font from 'expo-font';
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from '../theme/themecontext'; // Correct path
 
 export default function RootLayout() {
@@ -20,26 +21,28 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <ThemeProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        {isAuthenticated ? (
-          <Stack.Screen name="(tabs)" />
-        ) : (
-          <Stack.Screen name="auth/get-started" />
-        )}
-        {/* Enable modal presentation for modals folder */}
-        <Stack.Screen
-          name="modals/PostCreationModal"
-          options={{
-            presentation: 'transparentModal',
-            animation: 'slide_from_bottom',
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
           }}
-        />
-      </Stack>
-    </ThemeProvider>
+        >
+          {isAuthenticated ? (
+            <Stack.Screen name="(tabs)" />
+          ) : (
+            <Stack.Screen name="auth/get-started" />
+          )}
+          {/* Enable modal presentation for modals folder */}
+          <Stack.Screen
+            name="modals/PostCreationModal"
+            options={{
+              presentation: 'transparentModal',
+              animation: 'slide_from_bottom',
+            }}
+          />
+        </Stack>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

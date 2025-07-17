@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -5,7 +6,8 @@ import {
   FlatList,
   Image,
   RefreshControl,
-  StyleSheet
+  StyleSheet,
+  TouchableOpacity
 } from 'react-native';
 import { useThemeContext } from '../../theme/themecontext';
 
@@ -35,6 +37,7 @@ export default function HomeScreen() {
   const [hasMore, setHasMore] = useState(true);
   const pageRef = useRef(1);
   const [query, setQuery] = useState(getRandomQuery());
+  const router = useRouter();
 
   const backgroundColor = isDarkMode ? '#181D1C' : '#F3FAF8';
 
@@ -87,12 +90,22 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const renderItem = ({ item }: { item: ImageItem }) => (
-    <Image
-      source={{ uri: item.url }}
-      style={styles.image}
-      resizeMode="cover"
-    />
+  const renderItem = ({ item, index }: { item: ImageItem, index: number }) => (
+    <TouchableOpacity
+      onPress={() => router.push({
+        pathname: '/ImageDetailsScreen',
+        params: { index, images: JSON.stringify(images) },
+      })}
+      activeOpacity={0.85}
+    >
+      <Image
+        source={{ uri: item.url }}
+        style={styles.image}
+        resizeMode="cover"
+        // @ts-ignore: shared element prop for shared transition
+        sharedTransitionTag={`image-${item.id}`}
+      />
+    </TouchableOpacity>
   );
 
   return (
