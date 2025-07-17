@@ -1,13 +1,13 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  SafeAreaView,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useThemeContext } from '../theme/themecontext';
 
 export default function DisplayScreen() {
@@ -20,31 +20,63 @@ export default function DisplayScreen() {
     return (
       <TouchableOpacity
         onPress={() => setTheme(value)}
-        style={styles.optionRow}
+        style={[
+          styles.optionRow,
+          {
+            borderColor: isDarkMode ? '#2C2F2E' : '#DDEAE7',
+          },
+        ]}
       >
-        <Text style={[styles.optionLabel, { color: isDarkMode ? '#fff' : '#000' }]}>
+        <Text
+          style={[
+            styles.optionLabel,
+            { color: isDarkMode ? '#FFFFFF' : '#000000' },
+          ]}
+        >
           {label}
         </Text>
         {isSelected && (
-          <Ionicons name="checkmark" size={20} color={isDarkMode ? '#fff' : '#000'} />
+          <Ionicons
+            name="checkmark"
+            size={20}
+            color={isDarkMode ? '#FFFFFF' : '#000000'}
+          />
         )}
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDarkMode ? '#000' : '#fff' }]}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' },
+      ]}
+    >
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              borderColor: isDarkMode ? '#2C2F2E' : '#DDEAE7',
+            },
+          ]}
+        >
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={28} color={isDarkMode ? '#fff' : '#000'} />
+            <Ionicons
+              name="arrow-back"
+              size={28}
+              color={isDarkMode ? '#FFFFFF' : '#000000'}
+            />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: isDarkMode ? '#fff' : '#000' }]}>
+          <Text
+            style={[styles.title, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}
+          >
             Display
           </Text>
           <View style={{ width: 28 }} /> {/* spacer */}
@@ -75,7 +107,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderColor: '#ddd',
   },
   backButton: {
     padding: 5,
@@ -93,7 +124,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderColor: '#eee',
   },
   optionLabel: {
     fontSize: 16,

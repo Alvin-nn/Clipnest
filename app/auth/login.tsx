@@ -1,24 +1,52 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  Keyboard,
-  TouchableWithoutFeedback,
-  ScrollView,
+    Alert,
+    Keyboard,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { login } from '../api/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = () => {
-    // Navigate to tabs screen even if fields are empty (for now)
-    router.replace('/(tabs)');
+  const handleLogin = async () => {
+    Keyboard.dismiss();
+
+    // ✅ Strict check for empty fields
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const token = await login(email.trim(), password.trim());
+
+      // ✅ Token must be a non-empty string
+      if (typeof token === 'string' && token.length > 10) {
+        console.log('Login successful. Token:', token);
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert('Login Failed', 'Invalid email or password');
+      }
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message || 'Invalid credentials');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -26,14 +54,13 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Log in</Text>
 
+        {/* Social buttons (optional) */}
         <Pressable style={styles.socialButton}>
           <Text style={styles.socialButtonText}>Continue with Facebook</Text>
         </Pressable>
-
         <Pressable style={styles.socialButton}>
           <Text style={styles.socialButtonText}>Continue with Google</Text>
         </Pressable>
-
         <Pressable style={styles.socialButton}>
           <Text style={styles.socialButtonText}>Continue with Apple</Text>
         </Pressable>
@@ -47,24 +74,41 @@ export default function LoginScreen() {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
+          autoCapitalize="none"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+            placeholder="Password"
+            placeholderTextColor="#aaa"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <Pressable
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={20}
+              color="#aaa"
+            />
+          </Pressable>
+        </View>
 
         <Pressable
           style={[
             styles.loginButton,
-            (email || password) && { backgroundColor: '#26A69A' },
+            (!email.trim() || !password.trim() || loading) && { opacity: 0.5 },
           ]}
           onPress={handleLogin}
+          disabled={loading}
         >
-          <Text style={styles.loginButtonText}>Log In</Text>
+          <Text style={styles.loginButtonText}>
+            {loading ? 'Logging in...' : 'Log In'}
+          </Text>
         </Pressable>
 
         <Text style={styles.forgot}>Forgot password?</Text>
@@ -116,6 +160,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: '100%',
     marginBottom: 15,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#333',
+    borderRadius: 8,
+    width: '100%',
+    marginBottom: 15,
+  },
+  eyeIcon: {
+    paddingHorizontal: 15,
   },
   loginButton: {
     backgroundColor: '#4A5A6A',
