@@ -1,6 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Dimensions,
     FlatList,
     Image,
     Keyboard,
@@ -17,8 +19,14 @@ import {
 } from 'react-native';
 import { useThemeContext } from '../../theme/themecontext';
 
-const UNSPLASH_ACCESS_KEY = 'BFOYbWJ2jnhmYi-W7Ew3uBsoQ7V-F_qals3ICv4SNIs';
-const PEXELS_API_KEY = 'hVq7HPVbO1wmVUqvsA47uaHqeZdESbtdG2lovKcBkzTuopoaErCa226H';
+// =====================
+//  API KEYS - CHANGE THESE TO YOUR OWN!
+// =====================
+// Get your own keys at https://unsplash.com/developers and https://www.pexels.com/api/
+const UNSPLASH_DEFAULT_KEY = "BFOYbWJ2jnhmYi-W7Ew3uBsoQ7V-F_qals3ICv4SNIs";
+const PEXELS_DEFAULT_KEY = "hVq7HPVbO1wmVUqvsA47uaHqeZdESbtdG2lovKcBkzTuopoaErCa226H";
+const UNSPLASH_ACCESS_KEY = "CIQftPIa7wzz8JKsgqiCt7-wT-W4FAI_i1t0ZBJ8MkE"; // <-- YOUR KEY
+const PEXELS_API_KEY = "OXf4xcmwMg0Zl9KpZZSWFubbuv6kXYJsGHAIVUHW0jWoP5OKeutRGbQm"; // <-- CHANGE THIS IF YOU HAVE A NEW ONE
 const PER_PAGE = 20;
 
 const SUGGESTIONS = [
@@ -55,12 +63,16 @@ export default function SearchScreen() {
   const pageRef = useRef(1);
   const searchRef = useRef('');
   const [selectedPin, setSelectedPin] = useState<ImageItem | null>(null);
+  const [debugInfo, setDebugInfo] = useState('');
+  const [filteredSuggestions, setFilteredSuggestions] = useState<typeof SUGGESTIONS>([]);
+  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
+  const router = useRouter();
 
   // Add debounce timer ref
   const debounceTimer = useRef<any>(null);
 
-  const fetchImages = useCallback(async (reset = false) => {
-    console.log('fetchImages called', searchRef.current);
+  const fetchImages = async (reset = false) => {
+    setDebugInfo('');
     const query = searchRef.current;
     if (!query.trim()) return;
     setLoading(true);
@@ -73,11 +85,11 @@ export default function SearchScreen() {
       ).then(async res => {
         if (!res.ok) {
           const txt = await res.text();
-          console.error('Unsplash error response:', txt);
+          setDebugInfo(prev => prev + `\nUnsplash error: ${txt}`);
           throw new Error('Unsplash: ' + txt);
         }
         const json = await res.json();
-        console.log('Unsplash API response:', json);
+        setDebugInfo(prev => prev + `\nUnsplash success: ${JSON.stringify(json).slice(0, 300)}`);
         return json;
       });
       // Pexels fetch
@@ -87,30 +99,42 @@ export default function SearchScreen() {
       ).then(async res => {
         if (!res.ok) {
           const txt = await res.text();
-          console.error('Pexels error response:', txt);
+          setDebugInfo(prev => prev + `\nPexels error: ${txt}`);
           throw new Error('Pexels: ' + txt);
         }
         const json = await res.json();
-        console.log('Pexels API response:', json);
+        setDebugInfo(prev => prev + `\nPexels success: ${JSON.stringify(json).slice(0, 300)}`);
         return json;
       });
-      // Wait for both
-      const [unsplashData, pexelsData] = await Promise.all([unsplashPromise, pexelsPromise]);
-      // Normalize
-      const unsplashImages: ImageItem[] = (unsplashData.results || []).map((img: any) => ({ id: 'u_' + img.id, url: img.urls.small }));
-      const pexelsImages: ImageItem[] = (pexelsData.photos || []).map((img: any) => ({ id: 'p_' + img.id, url: img.src.medium }));
-      const merged = reset ? [...unsplashImages, ...pexelsImages] : [...images, ...unsplashImages, ...pexelsImages];
+      // Wait for both, but don't fail if one fails
+      const results = await Promise.allSettled([unsplashPromise, pexelsPromise]);
+      let unsplashImages: ImageItem[] = [];
+      let pexelsImages: ImageItem[] = [];
+      if (results[0].status === 'fulfilled') {
+        const unsplashData = results[0].value;
+        unsplashImages = (unsplashData.results || []).map((img: any) => ({ id: 'u_' + img.id, url: img.urls.small }));
+      }
+      if (results[1].status === 'fulfilled') {
+        const pexelsData = results[1].value;
+        pexelsImages = (pexelsData.photos || []).map((img: any) => ({ id: 'p_' + img.id, url: img.src.medium }));
+      }
+      const merged = [...unsplashImages, ...pexelsImages];
       setImages(merged);
-      console.log('Images:', merged);
       pageRef.current = page + 1;
       setHasMore(unsplashImages.length + pexelsImages.length > 0);
+      if (merged.length === 0) {
+        setError('No images found.');
+      }
+      if (results[0].status === 'rejected' && results[1].status === 'rejected') {
+        setError('Image fetch error');
+      }
     } catch (e: any) {
       setError(e.message || 'Something went wrong');
-      console.error('Image fetch error:', e);
+      setDebugInfo(prev => prev + `\nImage fetch error: ${e.message}`);
     } finally {
       setLoading(false);
     }
-  }, [images]);
+  };
 
   const onSearch = () => {
     Keyboard.dismiss();
@@ -129,8 +153,14 @@ export default function SearchScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: ImageItem }) => (
-    <TouchableOpacity onPress={() => setSelectedPin(item)} activeOpacity={0.85}>
+  const renderItem = ({ item, index }: { item: ImageItem, index: number }) => (
+    <TouchableOpacity
+      onPress={() => router.push({
+        pathname: '/ImageDetailsScreen',
+        params: { index, images: JSON.stringify(images) },
+      })}
+      activeOpacity={0.85}
+    >
       <Image
         source={{ uri: item.url }}
         style={styles.image}
@@ -163,141 +193,51 @@ export default function SearchScreen() {
     </TouchableOpacity>
   );
 
-  // Debounced search effect
+  // Only fetch images on onSearch or when a suggestion is tapped
   useEffect(() => {
     if (searchText.trim() === '') {
       setShowSuggestions(true);
       setImages([]);
       setError('');
       setHasMore(true);
+      setFilteredSuggestions(SUGGESTIONS);
       return;
     }
-    setShowSuggestions(false);
+    // Filter suggestions as user types
+    setFilteredSuggestions(
+      SUGGESTIONS.filter(s => s.label.toLowerCase().includes(searchText.toLowerCase()))
+    );
+    setShowSuggestions(filteredSuggestions.length > 0);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
-      console.log('Debounced search effect triggered for', searchText);
       searchRef.current = searchText;
       setImages([]);
       setHasMore(true);
       setError('');
       pageRef.current = 1;
       fetchImages(true);
-    }, 600); // 600ms debounce
+    }, 600);
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchText]);
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }}>
-        <View style={{ paddingHorizontal: 12, paddingTop: Platform.OS === 'android' ? 24 : 0, backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }}>
-          <View style={styles.searchBarRow}>
-          <TextInput
-              placeholder="Search Clipnest"
-            placeholderTextColor={isDarkMode ? '#aaa' : '#999'}
-            style={[
-              styles.input,
-              {
-                backgroundColor: isDarkMode ? '#222' : '#f0f0f0',
-                color: isDarkMode ? '#fff' : '#000',
-              },
-            ]}
-            value={searchText}
-              onChangeText={(text) => {
-                setSearchText(text);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => {
-                setSearchFocused(true);
-                setShowSuggestions(true);
-              }}
-              onBlur={() => setSearchFocused(false)}
-              returnKeyType="search"
-            />
-            {(searchFocused || searchText.length > 0) && (
-              <TouchableOpacity
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setSearchText('');
-                  setShowSuggestions(true);
-                }}
-                style={styles.cancelButton}
-              >
-                <Text style={[styles.cancelText, { color: isDarkMode ? '#fff' : '#181D1C' }]}>Cancel</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-        {showSuggestions && searchText.trim() === '' ? (
-          <>
-            <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#181D1C', marginLeft: 16, marginTop: 16 }]}>Ideas for you</Text>
-            <FlatList
-              data={SUGGESTIONS}
-              keyExtractor={(item) => item.label}
-              renderItem={renderSuggestionTile}
-              numColumns={2}
-              contentContainerStyle={styles.suggestionGrid}
-              showsVerticalScrollIndicator={false}
-            />
-          </>
-        ) : (
-          <>
-            {error ? (
-              <Text style={{ color: 'red', textAlign: 'center', marginTop: 16 }}>{error}</Text>
-            ) : null}
-            {images.length === 0 && !loading ? (
-              <Text style={{ color: isDarkMode ? '#fff' : '#181D1C', textAlign: 'center', marginTop: 32, fontSize: 16 }}>
-                No results found
-              </Text>
-            ) : null}
-            <FlatList
-              data={images}
-              keyExtractor={(item) => item.id}
-              renderItem={renderItem}
-              numColumns={2}
-              contentContainerStyle={styles.grid}
-              style={{ flex: 1 }}
-              onEndReached={loadMore}
-              onEndReachedThreshold={0.5}
-              ListFooterComponent={loading ? <ActivityIndicator style={{ margin: 16 }} /> : null}
-              showsVerticalScrollIndicator={false}
-            />
-          </>
-        )}
-        {/* Pin Details Modal */}
-        <Modal
-          visible={!!selectedPin}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setSelectedPin(null)}
-        >
-          <Pressable style={styles.modalOverlay} onPress={() => setSelectedPin(null)}>
-            <View style={styles.modalContent}>
-              <Image
-                source={{ uri: selectedPin?.url }}
-                style={styles.modalImage}
-                resizeMode="contain"
-              />
-              {selectedPin?.title && (
-                <Text style={styles.modalTitle}>{selectedPin.title}</Text>
-              )}
-              {selectedPin?.description && (
-                <Text style={styles.modalDesc}>{selectedPin.description}</Text>
-              )}
-              <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedPin(null)}>
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-      </View>
-          </Pressable>
-        </Modal>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
-  );
-}
+  // Warn if using default keys
+  useEffect(() => {
+    if (
+      String(UNSPLASH_ACCESS_KEY) === String(UNSPLASH_DEFAULT_KEY) ||
+      String(PEXELS_API_KEY) === String(PEXELS_DEFAULT_KEY)
+    ) {
+      setShowApiKeyWarning(true);
+    } else {
+      setShowApiKeyWarning(false);
+    }
+  }, []);
 
-const styles = StyleSheet.create({
+  const screenWidth = Dimensions.get('window').width;
+  const imageWidth = (screenWidth - 48) / 2;
+
+  const styles = StyleSheet.create({
   searchBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -361,14 +301,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   grid: {
-    padding: 8,
+    padding: 16,
   },
   image: {
-    flex: 1,
-    height: 220,
-    borderRadius: 14,
-    margin: 8,
-    backgroundColor: '#ccc',
+    width: imageWidth,
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 16,
+    marginRight: 16,
   },
   modalOverlay: {
     flex: 1,
@@ -417,3 +357,167 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }}>
+        {showApiKeyWarning && (
+          <Text style={{ backgroundColor: '#ffb347', color: '#181D1C', padding: 8, textAlign: 'center', fontWeight: 'bold', borderRadius: 8, margin: 8 }}>
+            ⚠️ You are using the default API keys. Please replace them at the top of this file for reliable search results!
+          </Text>
+        )}
+        <View style={{ paddingHorizontal: 12, paddingTop: Platform.OS === 'android' ? 24 : 0, backgroundColor: isDarkMode ? '#181D1C' : '#F3FAF8' }}>
+          <View style={styles.searchBarRow}>
+            <TextInput
+              placeholder="Search Clipnest"
+              placeholderTextColor={isDarkMode ? '#aaa' : '#999'}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDarkMode ? '#222' : '#f0f0f0',
+                  color: isDarkMode ? '#fff' : '#000',
+                },
+              ]}
+              value={searchText}
+              onChangeText={(text) => {
+                setSearchText(text);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => {
+                setSearchFocused(true);
+                setShowSuggestions(true);
+              }}
+              onBlur={() => setSearchFocused(false)}
+              returnKeyType="search"
+              onSubmitEditing={onSearch}
+            />
+            {(searchFocused || searchText.length > 0) && (
+              <TouchableOpacity
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setSearchText('');
+                  setShowSuggestions(true);
+                }}
+                style={styles.cancelButton}
+              >
+                <Text style={[styles.cancelText, { color: isDarkMode ? '#fff' : '#181D1C' }]}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {/* Suggestions dropdown */}
+          {showSuggestions && searchText.trim() !== '' && filteredSuggestions.length > 0 && (
+            <View style={{
+              backgroundColor: isDarkMode ? '#232B2B' : '#fff',
+              borderRadius: 12,
+              marginTop: 4,
+              marginBottom: 8,
+              elevation: 4,
+              borderWidth: 1,
+              borderColor: isDarkMode ? '#4EE0C1' : '#181D1C',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+            }}>
+              {filteredSuggestions.slice(0, 6).map(s => (
+                <TouchableOpacity
+                  key={s.label}
+                  style={{
+                    padding: 14,
+                    borderBottomWidth: 1,
+                    borderColor: isDarkMode ? '#333' : '#eee',
+                  }}
+                  onPress={() => {
+                    setSearchText(s.label);
+                    setShowSuggestions(false);
+                    searchRef.current = s.label;
+                    setImages([]);
+                    setHasMore(true);
+                    setError('');
+                    pageRef.current = 1;
+                    fetchImages(true);
+                    Keyboard.dismiss();
+                  }}
+                >
+                  <Text style={{ color: isDarkMode ? '#4EE0C1' : '#181D1C', fontWeight: 'bold', fontSize: 16 }}>{s.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+        {showSuggestions && searchText.trim() === '' ? (
+          <>
+            <Text style={[styles.sectionTitle, { color: isDarkMode ? '#fff' : '#181D1C', marginLeft: 16, marginTop: 16 }]}>Ideas for you</Text>
+            <FlatList
+              data={SUGGESTIONS}
+              keyExtractor={(item) => item.label}
+              renderItem={renderSuggestionTile}
+              numColumns={2}
+              contentContainerStyle={styles.suggestionGrid}
+              showsVerticalScrollIndicator={false}
+            />
+          </>
+        ) : (
+          <>
+            {images.length > 0 && (
+              <Text style={{ color: 'green', textAlign: 'center', marginTop: 8 }}>
+                Showing {images.length} images
+              </Text>
+            )}
+            {error ? (
+              <Text style={{ color: 'red', textAlign: 'center', marginTop: 16 }}>{error}</Text>
+            ) : null}
+            {debugInfo && images.length === 0 ? (
+              <Text style={{ color: 'orange', fontSize: 12, margin: 8, padding: 4, backgroundColor: '#222', borderRadius: 6 }} selectable>
+                {debugInfo}
+              </Text>
+            ) : null}
+            {images.length === 0 && !loading ? (
+              <Text style={{ color: isDarkMode ? '#fff' : '#181D1C', textAlign: 'center', marginTop: 32, fontSize: 16 }}>
+                No results found
+              </Text>
+            ) : null}
+            <FlatList
+              data={images}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              numColumns={2}
+              contentContainerStyle={styles.grid}
+              style={{ flex: 1 }}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={loading ? <ActivityIndicator style={{ margin: 16 }} /> : null}
+              showsVerticalScrollIndicator={false}
+            />
+          </>
+        )}
+        {/* Pin Details Modal */}
+        <Modal
+          visible={!!selectedPin}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSelectedPin(null)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setSelectedPin(null)}>
+            <View style={styles.modalContent}>
+              <Image
+                source={{ uri: selectedPin?.url }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+              {selectedPin?.title && (
+                <Text style={styles.modalTitle}>{selectedPin.title}</Text>
+              )}
+              {selectedPin?.description && (
+                <Text style={styles.modalDesc}>{selectedPin.description}</Text>
+              )}
+              <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedPin(null)}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+      </View>
+          </Pressable>
+        </Modal>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
+  );
+}

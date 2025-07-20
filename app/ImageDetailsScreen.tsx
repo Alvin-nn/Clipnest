@@ -116,7 +116,6 @@ export default function ImageDetailsScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -192,3 +191,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
   },
 });
+
